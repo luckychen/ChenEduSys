@@ -478,6 +478,30 @@ Paint overlay on PDF:
 | PaintEngine is Qt-free (pure Python) | Testable without GUI; canvas widget is just a renderer + input handler |
 | Strokes stored in canvas-space, viewport is a window into it | Panning moves the view without moving strokes — critical for paint sync |
 
+### Phase 2: Hub Server & Authentication — COMPLETE
+
+- [x] `hub_server/main.py` — aiohttp app with REST + WebSocket endpoints
+- [x] `hub_server/database.py` — SQLite with users, meetings, participants tables
+- [x] `hub_server/auth.py` — argon2 password hashing, JWT token create/validate
+- [x] `hub_server/signaling.py` — meeting CRUD, join/leave, WebSocket relay, real-time notifications
+- [x] `src/chenedusys/transport/signaling.py` — async WebSocket client with reconnect + heartbeat
+- [x] `src/chenedusys/services/auth.py` — client auth service, OS keyring token storage
+- [x] `src/chenedusys/ui/windows/login.py` — real login/register form
+- [x] `src/chenedusys/ui/windows/dashboard.py` — meeting list, create, join
+- [x] JSON error responses (not text/plain) — discovered by tests
+- [x] 130 tests total (Phase 0 + 1 + 2), all passing
+
+#### Key Design Decisions (Phase 2)
+
+| Decision | Why |
+|---|---|
+| aiohttp for hub server | Async, lightweight, good test support via pytest-aiohttp |
+| SQLite for hub storage | Simple, no external DB needed, adequate for small-group use |
+| JWT tokens for auth | Stateless, no server-side session needed, standard |
+| OS keyring for token storage | Never stored in plaintext files |
+| Error responses as JSON | aiohttp defaults to text/plain for HTTP errors; tests caught this |
+| Teacher auto-added as participant | On create_meeting, teacher is participant #1; max_participants includes teacher |
+
 
 ### Phase 2: Hub Server & Auth (Week 5-6)
 **Goal:** Cloud signaling server running, users can register and login.
