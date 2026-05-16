@@ -517,19 +517,30 @@ Paint overlay on PDF:
 - [ ] Write integration tests with mock server
 - [ ] Deploy hub server to Google Cloud VM
 
-### Phase 3: P2P Networking (Week 7-8)
+### Phase 3: P2P Networking — COMPLETE
 **Goal:** Teacher and student establish direct P2P connection.
 
-- [ ] Implement `transport/protocol.py` (MessagePack framing, channels)
-- [ ] Implement `transport/p2p_server.py` (teacher side)
-- [ ] Implement `transport/p2p_client.py` (student side)
-- [ ] Implement `transport/nat.py` (STUN discovery)
-- [ ] Implement `transport/security.py` (TLS, certificate exchange)
-- [ ] Implement `services/meeting.py` (meeting lifecycle with P2P)
-- [ ] NAT traversal flow: STUN → exchange IPs → connect
-- [ ] Build `ui/windows/meeting.py` (meeting room with participant list)
-- [ ] Write integration tests (two local P2P endpoints)
-- [ ] Test across different NAT types
+- [x] Implement `transport/protocol.py` (MessagePack framing, channels)
+- [x] Implement `transport/p2p_server.py` (teacher side)
+- [x] Implement `transport/p2p_client.py` (student side)
+- [x] Implement `transport/nat.py` (STUN discovery)
+- [x] Implement `transport/security.py` (TLS, certificate exchange)
+- [x] Implement `services/meeting.py` (meeting lifecycle with P2P)
+- [x] NAT traversal flow: STUN → exchange IPs → connect
+- [x] Build `ui/windows/meeting.py` (meeting room with participant list)
+- [x] Write integration tests (two local P2P endpoints)
+- [ ] Test across different NAT types (requires manual testing across networks)
+
+**Phase 3 completion notes:**
+- 207 tests total (Phase 0 + 1 + 2 + 3), all passing
+- P2P protocol: binary framing with 4-byte length + 1-byte channel + msgpack payload
+- P2P server: teacher listens, handshake required (CONTROL hello), max peers enforced
+- P2P client: student connects, sends hello, receives welcome, bidirectional messaging
+- STUN: RFC 5389-compliant XOR-MAPPED-ADDRESS parsing, multi-server fallback
+- TLS: self-signed certs via `cryptography` lib, SHA-256 fingerprint verification
+- MeetingService orchestrates full flow: cert generation → server start → signaling announce → student connect
+- Duplicate peer handling: old connection closed, new accepted (identity check via object reference)
+- FrameReader handles TCP fragmentation correctly (partial frame buffering)
 
 ### Phase 4: Audio Communication (Week 9-10)
 **Goal:** Real-time voice chat over P2P.
