@@ -1,0 +1,88 @@
+{
+  "clean_doc": {
+    "file": "clean_doc.png",
+    "corners": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        799.0,
+        0.0
+      ],
+      [
+        799.0,
+        1099.0
+      ],
+      [
+        0.0,
+        1099.0
+      ]
+    ]
+  },
+  "angled_15deg": {
+    "file": "angled_15deg.png",
+    "corners": [
+      [
+        634.0,
+        615.0
+      ],
+      [
+        1266.0,
+        647.0
+      ],
+      [
+        1392.0,
+        1585.0
+      ],
+      [
+        508.0,
+        1715.0
+      ]
+    ]
+  },
+  "angled_30deg": {
+    "file": "angled_30deg.png",
+    "corners": [
+      [
+        710.0,
+        678.0
+      ],
+      [
+        1190.0,
+        742.0
+      ],
+      [
+        1430.0,
+        1522.0
+      ],
+      [
+        470.0,
+        1778.0
+      ]
+    ]
+  },
+  "rotated_45deg": {
+    "file": "rotated_45deg.png",
+    "corners": null,
+    "note": "rotated, corners not applicable"
+  },
+  "dark_photo": {
+    "file": "dark_photo.png",
+    "corners": null,
+    "note": "dark, corners from perspective"
+  },
+  "bright_glare": {
+    "file": "bright_glare.png",
+    "corners": null
+  },
+  "low_res_640x480": {
+    "file": "low_res_640x480.png",
+    "corners": null,
+    "note": "upscaled from 640x480"
+  },
+  "blurry_noisy": {
+    "file": "blurry_noisy.png",
+    "corners": null
+  }
+}

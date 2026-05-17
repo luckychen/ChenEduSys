@@ -636,14 +636,23 @@ Paint overlay on PDF:
 **Goal:** Photo → scanned image → question PDF → LLM tutoring.
 Target difficulty: AMC 12 level (US middle/high school math competition).
 
-#### Sub-phase 6.1: Photo → High-Quality Scanned Image (Local, No LLM)
+#### Sub-phase 6.1: Photo → High-Quality Scanned Image (Local, No LLM) — COMPLETE
 **Deliverable:** A photo of a worksheet/exam becomes a clean, perspective-corrected PNG.
 
-- [ ] Implement `ai/scanner.py` — OpenCV-based document scanner
-- [ ] Edge detection + perspective correction (4-point transform)
-- [ ] Adaptive contrast/brightness normalization
-- [ ] Output format: **PNG** (lossless, preserves text edges and line art)
-- [ ] Scan UI: open image file or paste from clipboard
+- [x] Implement `ai/scanner.py` — OpenCV-based document scanner
+- [x] Edge detection + perspective correction (4-point transform)
+- [x] Adaptive contrast/brightness normalization
+- [x] Output format: **PNG** (lossless, preserves text edges and line art)
+- [x] Scan UI: `ui/windows/scanner.py` — open photo, preview original + scanned, save PNG
+- [x] 24 tests (17 scanner + 7 scanner window), 8 synthetic fixtures (~8MB)
+
+**Sub-phase 6.1 completion notes:**
+- 284 tests total (Phase 0–6.1), all passing
+- Pipeline: Canny edge → contour finding → 4-point perspective transform → CLAHE + adaptive threshold
+- Fallback: when no document detected, uses full image crop with 5px margin
+- Corner scaling fix: numpy float32 upcast to float64 when multiplied by Python floats — explicit cast required
+- Dependency added: `opencv-python-headless>=4.8` in pyproject.toml
+- Scanner window: side-by-side original/scanned preview, auto-scales on resize
 
 **Why PNG over JPEG:** PNG is lossless — critical for text and geometric figures.
 JPEG compression introduces artifacts that degrade text legibility and
