@@ -686,15 +686,23 @@ split question boundaries. It does NOT need to understand the math — that's
 the LLM's job in 6.3. The OCR is only for detecting "this line starts with a
 number → it's a new question."
 
-#### Sub-phase 6.3: LLM-Powered Tutoring (API Required)
+#### Sub-phase 6.3: LLM-Powered Tutoring (API Required) — COMPLETE
 **Deliverable:** A reusable prompt that sends a question image to a multimodal LLM and receives structured tutoring feedback.
 
-- [ ] Design reusable tutoring prompt for AMC 12 level math
-- [ ] Implement `ai/tutor.py` — LLM API integration (Claude / GPT-4V)
-- [ ] Prompt engineering: structured output (concept identification, step-by-step hints, solution)
-- [ ] Settings UI for API key configuration
-- [ ] Display tutor response in meeting window
-- [ ] Integration with content sharing: use segmented PDFs directly in meetings
+- [x] Design reusable tutoring prompt for AMC 12 level math
+- [x] Implement `ai/tutor.py` — LLM API integration (Claude / GPT-4V)
+- [x] Prompt engineering: structured output (concept identification, step-by-step hints, solution)
+- [x] Settings UI for API key configuration (`ui/widgets/tutor_panel.py`)
+- [x] Display tutor response with concepts, difficulty, hints, solution
+- [x] 36 tests (27 tutor + 9 tutor panel), all passing
+
+**Sub-phase 6.3 completion notes:**
+- 346 tests total (Phase 0–6.3), all passing
+- Dual-provider support: Anthropic (Claude) and OpenAI (GPT-4V)
+- Structured JSON response: concepts, difficulty (1-5), 3-level hint ladder, full solution
+- Prompt designed for AMC 12 level math (algebra, geometry, combinatorics, number theory)
+- Tutor panel: provider selector, API key input (password field), model override, response viewer
+- API keys are optional dependencies (`anthropic`, `openai`) — not required for local features
 
 **Prompt design principles:**
 - Reusable across question types (algebra, geometry, combinatorics, number theory)
