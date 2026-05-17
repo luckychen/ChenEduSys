@@ -119,6 +119,7 @@ and maintain. We can migrate to WebRTC later if needed.
 |---|---|---|
 | Photo → scan | OpenCV (`cv2`) perspective transform + adaptive threshold | Yes |
 | Question segmentation | OpenCV connected components + gap detection | Yes |
+| Light local OCR | Tesseract via `pytesseract` — numbering/header detection only | Yes |
 | PDF generation | PyMuPDF (`fitz`) — already used for PDF viewer | Yes |
 | LLM tutoring | Anthropic SDK (`anthropic`) or OpenAI SDK | No — API call |
 
@@ -652,16 +653,22 @@ fine line art (especially geometry plots).
 **Deliverable:** A scanned image is split into individual questions, each on its own PDF page with blank answer space.
 
 - [ ] Implement `ai/segmenter.py` — question region detection
-- [ ] Detect horizontal white-space gaps to split question boundaries
-- [ ] Detect figure/plot regions (non-text connected components: larger bounding boxes, color/shading)
-- [ ] Preserve original image quality — crop regions, do NOT OCR or re-render text
+- [ ] **Light local OCR** (Tesseract via `pytesseract`) for minimal text extraction:
+  detect numbering patterns ("1.", "2.", "1.1", "(a)", "(b)") and section headers
+- [ ] Use detected patterns + visual gap analysis to identify question boundaries
+- [ ] Handle cases where questions follow headers with no blank line gap
+  (e.g. "Section 1 Practice\n1. Consider..." — numbering pattern identifies the split)
+- [ ] Detect figure/plot regions (non-text connected components)
+- [ ] Preserve original image quality — crop regions from the PNG, do NOT re-render text
 - [ ] Generate PDF: each page = one question image + blank answer area
 - [ ] Handle multi-column layouts
-- [ ] Handle geometry problems: figure region detected and kept alongside question
 
-**Key insight:** No OCR needed. We detect visual regions (text blocks, figures)
-and preserve the original pixels. A geometry problem's figure stays as an image,
-not as reconstructed vector art. This is robust even for complex diagrams.
+**Why limited local OCR:** Pure visual gap detection fails when questions follow
+section headers with no whitespace separation. A fast Tesseract pass extracts
+just enough semantic info (numbering patterns, header keywords) to correctly
+split question boundaries. It does NOT need to understand the math — that's
+the LLM's job in 6.3. The OCR is only for detecting "this line starts with a
+number → it's a new question."
 
 #### Sub-phase 6.3: LLM-Powered Tutoring (API Required)
 **Deliverable:** A reusable prompt that sends a question image to a multimodal LLM and receives structured tutoring feedback.

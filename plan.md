@@ -766,33 +766,42 @@ an external API call.
 
 **Deliverable:** Scanned image is split into questions; each becomes a PDF page.
 
-**Key insight:** No OCR needed. We detect visual regions (text blocks, figures)
-using image analysis and preserve the original pixels. Geometry figures stay
-as images — no attempt to reconstruct vector art.
+**Approach:** A light local OCR pass (Tesseract via `pytesseract`) extracts
+just enough text to detect numbering patterns ("1.", "2.", "1.1", "(a)").
+Combined with visual gap analysis, this correctly identifies question
+boundaries even when questions follow section headers with no blank line.
+The OCR does NOT understand the math — it only detects "this line starts
+with a number pattern → new question." Full comprehension is left for the
+LLM in 6.3.
 
 #### Tasks
 
 | # | Task | Files |
 |---|---|---|
-| 6.2.1 | Horizontal gap detection to find question boundaries | `ai/segmenter.py` |
-| 6.2.2 | Figure/plot region detection (non-text connected components) | `ai/segmenter.py` |
-| 6.2.3 | Crop question regions preserving original image quality | `ai/segmenter.py` |
-| 6.2.4 | Generate PDF: each page = one question image + blank answer area | `ai/segmenter.py` |
-| 6.2.5 | Handle multi-column layouts | `ai/segmenter.py` |
-| 6.2.6 | Tests | `tests/unit/test_segmenter.py` |
+| 6.2.1 | Light OCR pass: Tesseract word-level extraction with bounding boxes | `ai/segmenter.py` |
+| 6.2.2 | Numbering pattern detection: "1.", "2.", "1.1", "(a)", "Q1", etc. | `ai/segmenter.py` |
+| 6.2.3 | Combine OCR patterns + visual gap analysis for question boundaries | `ai/segmenter.py` |
+| 6.2.4 | Handle section headers (non-question text before first numbered item) | `ai/segmenter.py` |
+| 6.2.5 | Figure/plot region detection (non-text connected components) | `ai/segmenter.py` |
+| 6.2.6 | Crop question regions preserving original image quality | `ai/segmenter.py` |
+| 6.2.7 | Generate PDF: each page = one question image + blank answer area | `ai/segmenter.py` |
+| 6.2.8 | Handle multi-column layouts | `ai/segmenter.py` |
+| 6.2.9 | Tests | `tests/unit/test_segmenter.py` |
 
 #### Test Plan
 
 **`test_segmenter.py`**
 | Test Case | Input | Expected Result |
 |---|---|---|
-| Single question | Image with 1 question | PDF with 1 page |
+| Single question | Image with 1 numbered question | PDF with 1 page |
 | Multiple questions | Image with 3 numbered questions | PDF with 3 pages |
+| Section header + questions | "Section 1 Practice\n1. Consider..." | Header excluded, question detected |
+| No gap between questions | "1. question...2. next..." | Both questions split correctly |
 | Question with figure | Geometry problem with plot | Figure region included on same page |
-| Dense layout | Questions with minimal spacing | Boundaries detected at gaps |
+| Dense layout | Questions with minimal spacing | Boundaries detected via numbering |
 | Empty scan | Blank paper | "No questions detected" |
 | Multi-column | Two-column exam layout | Correct column splitting |
-| Question overflow | Very long single question | Content fits on page |
+| Numbering patterns | "1.", "1.1", "(a)", "Q1" | All patterns recognized |
 
 ---
 
