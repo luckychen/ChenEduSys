@@ -7,7 +7,12 @@ A teacher and students connect directly over their networks for real-time voice 
 ## Quick Start
 
 ```bash
+# SSH (if you have a key configured)
 git clone git@github.com:luckychen/ChenEduSys.git
+
+# HTTPS (works everywhere, no SSH key needed)
+git clone https://github.com/luckychen/ChenEduSys.git
+
 cd ChenEduSys
 conda env create -f environment.yml
 conda activate chenedusys
@@ -71,7 +76,12 @@ The `pytesseract` Python package is already listed in the dependencies — it ju
 ### 1. Clone the repository
 
 ```bash
+# HTTPS (recommended — no SSH key needed)
+git clone https://github.com/luckychen/ChenEduSys.git
+
+# SSH alternative
 git clone git@github.com:luckychen/ChenEduSys.git
+
 cd ChenEduSys
 ```
 
