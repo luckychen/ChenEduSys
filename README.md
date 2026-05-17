@@ -12,6 +12,7 @@ A teacher and students connect directly over their networks for real-time voice 
 | **C compiler** | gcc (usually pre-installed) | Visual Studio Build Tools (for compiling PyAudio) |
 | **PortAudio** | `libportaudio2` | Bundled with PyAudio wheel |
 | **Opus** | `libopus0` | Bundled with opuslib |
+| **PyMuPDF** | N/A | pip wheel |
 | **ALSA** | `libasound2` | N/A |
 
 ### System dependencies

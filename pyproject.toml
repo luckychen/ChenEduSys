@@ -21,6 +21,7 @@ dependencies = [
     "cryptography>=42.0",
     "opuslib>=3.0",
     "PyAudio>=0.2",
+    "PyMuPDF>=1.24",
 ]
 
 [project.optional-dependencies]

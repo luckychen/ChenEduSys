@@ -606,19 +606,28 @@ Paint overlay on PDF:
 - AudioService: ties capture→encode→network and network→decode→playback
 - AudioControls widget: mute button (red/green), volume slider
 
-### Phase 5: Content Sharing (Week 11-13)
+### Phase 5: Content Sharing — COMPLETE
 **Goal:** PDF + paint synchronization between teacher and students.
 
-- [ ] Implement `ui/widgets/pdf_viewer.py` (QPdfDocument rendering)
-- [ ] Implement `ui/widgets/content_view.py` (PDF background + paint overlay)
-- [ ] Implement `services/content_sync.py` (PDF transfer, page sync, paint sync)
-- [ ] PDF file transfer on CONTENT channel
-- [ ] Page change sync (teacher controls which page is displayed)
-- [ ] Paint stroke sync on PAINT channel
-- [ ] Student sees: PDF page + teacher's paint overlay
-- [ ] Toolbar: pen, eraser, clear, page navigation
-- [ ] Write integration tests for content sync
-- [ ] End-to-end test: full meeting with content sharing
+- [x] Implement `ui/widgets/pdf_viewer.py` (PyMuPDF rendering)
+- [x] Implement `ui/widgets/content_view.py` (PDF background + paint overlay)
+- [x] Implement `services/content_sync.py` (PDF transfer, page sync, paint sync)
+- [x] PDF file transfer on CONTENT channel (chunked, 256KB chunks)
+- [x] Page change sync (teacher controls which page is displayed)
+- [x] Paint stroke sync on PAINT channel
+- [x] Student sees: PDF page + teacher's paint overlay
+- [x] Toolbar: pen, eraser, clear, page navigation, audio controls
+- [x] Write integration tests for content sync
+- [ ] End-to-end test: full meeting with content sharing (manual)
+
+**Phase 5 completion notes:**
+- 260 tests total (Phase 0–5), all passing
+- PDF rendering: PyMuPDF (pip-installable, cross-platform, no QtMultimedia/Kerberos conflict)
+- ContentSync: chunked PDF transfer (256KB), stroke/erase/clear sync via PAINT channel
+- ContentView: PDF background + paint overlay, same input model (Ctrl+draw, Shift+erase)
+- Meeting window: integrated content view, page navigation, paint tools, audio controls
+- PDF chunks sent with header: `transfer_id:chunk_index:total_chunks:` prefix
+- Out-of-order chunk reassembly supported
 
 ### Phase 6: AI Assistant (Future Phase)
 **Goal:** Photo scanner + question segmentation via LLM.
