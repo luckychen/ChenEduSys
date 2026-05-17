@@ -1,0 +1,240 @@
+{
+  "simple_numbered": {
+    "file": "simple_numbered.png",
+    "question_count": 5,
+    "questions": [
+      {
+        "index": 0,
+        "top": 80,
+        "bottom": 105,
+        "text": "Q1"
+      },
+      {
+        "index": 1,
+        "top": 145,
+        "bottom": 170,
+        "text": "Q2"
+      },
+      {
+        "index": 2,
+        "top": 210,
+        "bottom": 235,
+        "text": "Q3"
+      },
+      {
+        "index": 3,
+        "top": 275,
+        "bottom": 300,
+        "text": "Q4"
+      },
+      {
+        "index": 4,
+        "top": 340,
+        "bottom": 365,
+        "text": "Q5"
+      }
+    ]
+  },
+  "section_headers": {
+    "file": "section_headers.png",
+    "question_count": 4,
+    "questions": [
+      {
+        "index": 0,
+        "top": 95,
+        "bottom": 105,
+        "text": "Q1"
+      },
+      {
+        "index": 1,
+        "top": 155,
+        "bottom": 155,
+        "text": "Q2"
+      },
+      {
+        "index": 2,
+        "top": 220,
+        "bottom": 220,
+        "text": "Q3"
+      },
+      {
+        "index": 3,
+        "top": 270,
+        "bottom": 270,
+        "text": "Q4"
+      }
+    ]
+  },
+  "with_figure": {
+    "file": "with_figure.png",
+    "question_count": 3,
+    "questions": [
+      {
+        "index": 0,
+        "top": 80,
+        "bottom": 230,
+        "text": "Q1",
+        "has_figure": true
+      },
+      {
+        "index": 1,
+        "top": 270,
+        "bottom": 380,
+        "text": "Q2",
+        "has_figure": true
+      },
+      {
+        "index": 2,
+        "top": 420,
+        "bottom": 420,
+        "text": "Q3"
+      }
+    ]
+  },
+  "dense_questions": {
+    "file": "dense_questions.png",
+    "question_count": 10,
+    "questions": [
+      {
+        "index": 0,
+        "top": 80,
+        "bottom": 80,
+        "text": "Q1"
+      },
+      {
+        "index": 1,
+        "top": 105,
+        "bottom": 105,
+        "text": "Q2"
+      },
+      {
+        "index": 2,
+        "top": 130,
+        "bottom": 130,
+        "text": "Q3"
+      },
+      {
+        "index": 3,
+        "top": 155,
+        "bottom": 155,
+        "text": "Q4"
+      },
+      {
+        "index": 4,
+        "top": 180,
+        "bottom": 180,
+        "text": "Q5"
+      },
+      {
+        "index": 5,
+        "top": 205,
+        "bottom": 205,
+        "text": "Q6"
+      },
+      {
+        "index": 6,
+        "top": 230,
+        "bottom": 230,
+        "text": "Q7"
+      },
+      {
+        "index": 7,
+        "top": 255,
+        "bottom": 255,
+        "text": "Q8"
+      },
+      {
+        "index": 8,
+        "top": 280,
+        "bottom": 280,
+        "text": "Q9"
+      },
+      {
+        "index": 9,
+        "top": 305,
+        "bottom": 305,
+        "text": "Q10"
+      }
+    ]
+  },
+  "single_question": {
+    "file": "single_question.png",
+    "question_count": 1,
+    "questions": [
+      {
+        "index": 0,
+        "top": 100,
+        "bottom": 120,
+        "text": "Q1"
+      }
+    ]
+  },
+  "sub_numbering": {
+    "file": "sub_numbering.png",
+    "question_count": 2,
+    "questions": [
+      {
+        "index": 0,
+        "top": 80,
+        "bottom": 128,
+        "text": "Q1",
+        "has_subparts": true
+      },
+      {
+        "index": 1,
+        "top": 168,
+        "bottom": 196,
+        "text": "Q2",
+        "has_subparts": true
+      }
+    ]
+  },
+  "two_column": {
+    "file": "two_column.png",
+    "question_count": 6,
+    "questions": [
+      {
+        "index": 0,
+        "top": 80,
+        "bottom": 80,
+        "text": "Q1",
+        "column": "left"
+      },
+      {
+        "index": 1,
+        "top": 120,
+        "bottom": 120,
+        "text": "Q2",
+        "column": "left"
+      },
+      {
+        "index": 2,
+        "top": 160,
+        "bottom": 160,
+        "text": "Q3",
+        "column": "left"
+      },
+      {
+        "index": 3,
+        "top": 80,
+        "bottom": 80,
+        "text": "Q4",
+        "column": "right"
+      },
+      {
+        "index": 4,
+        "top": 120,
+        "bottom": 120,
+        "text": "Q5",
+        "column": "right"
+      },
+      {
+        "index": 5,
+        "top": 160,
+        "bottom": 160,
+        "text": "Q6",
+        "column": "right"
+      }
+    ]
+  }
+}

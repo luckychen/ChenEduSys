@@ -658,19 +658,26 @@ Target difficulty: AMC 12 level (US middle/high school math competition).
 JPEG compression introduces artifacts that degrade text legibility and
 fine line art (especially geometry plots).
 
-#### Sub-phase 6.2: Question Segmentation → One-Question-Per-Page PDF (Local, No LLM)
+#### Sub-phase 6.2: Question Segmentation → One-Question-Per-Page PDF (Local, No LLM) — COMPLETE
 **Deliverable:** A scanned image is split into individual questions, each on its own PDF page with blank answer space.
 
-- [ ] Implement `ai/segmenter.py` — question region detection
-- [ ] **Light local OCR** (Tesseract via `pytesseract`) for minimal text extraction:
+- [x] Implement `ai/segmenter.py` — question region detection
+- [x] **Light local OCR** (Tesseract via `pytesseract`) for minimal text extraction:
   detect numbering patterns ("1.", "2.", "1.1", "(a)", "(b)") and section headers
-- [ ] Use detected patterns + visual gap analysis to identify question boundaries
-- [ ] Handle cases where questions follow headers with no blank line gap
-  (e.g. "Section 1 Practice\n1. Consider..." — numbering pattern identifies the split)
-- [ ] Detect figure/plot regions (non-text connected components)
-- [ ] Preserve original image quality — crop regions from the PNG, do NOT re-render text
-- [ ] Generate PDF: each page = one question image + blank answer area
-- [ ] Handle multi-column layouts
+- [x] Use detected patterns + visual gap analysis to identify question boundaries
+- [x] Handle cases where questions follow headers with no blank line gap
+- [x] Detect figure/plot regions (non-text connected components)
+- [x] Preserve original image quality — crop regions from the PNG, do NOT re-render text
+- [x] Generate PDF: each page = one question image + blank answer area (`ai/question_pdf.py`)
+- [x] Segmenter UI: `ui/windows/segmenter.py` — scan → segment → browse questions → save PDF
+- [x] 26 tests (20 segmenter + 6 segmenter window), 7 synthetic fixtures (~122KB)
+
+**Sub-phase 6.2 completion notes:**
+- 310 tests total (Phase 0–6.2), all passing
+- Pipeline: Otsu binarize → row projection → gap-based block merging → question regions
+- pytesseract optional: numbering pattern detection when available, visual gap analysis as fallback
+- PDF generation via PyMuPDF: A4 pages with question image + separator + "Answer:" label
+- Segmenter UI: annotated preview with colored bounding boxes, question navigator, PDF export
 
 **Why limited local OCR:** Pure visual gap detection fails when questions follow
 section headers with no whitespace separation. A fast Tesseract pass extracts

@@ -23,6 +23,7 @@ dependencies = [
     "PyAudio>=0.2",
     "PyMuPDF>=1.24",
     "opencv-python-headless>=4.8",
+    "pytesseract>=0.3",
 ]
 
 [project.optional-dependencies]
