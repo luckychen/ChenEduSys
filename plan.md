@@ -744,7 +744,32 @@ an external API call.
 | 6.1.2 | Adaptive contrast/brightness normalization | `ai/scanner.py` |
 | 6.1.3 | Output as PNG (lossless, preserves text/line art) | `ai/scanner.py` |
 | 6.1.4 | Scanner UI: file open or clipboard paste | `ui/windows/scanner.py` |
-| 6.1.5 | Tests | `tests/unit/test_scanner.py` |
+| 6.1.5 | Generate synthetic test fixtures | `tests/fixtures/generate_scanner_fixtures.py` |
+| 6.1.6 | Tests | `tests/unit/test_scanner.py` |
+
+#### Test Dataset (`tests/fixtures/scanner/`)
+
+~8 synthetic images generated programmatically by `generate_scanner_fixtures.py`.
+The script creates a clean "document" image with text and lines, then applies
+realistic distortions to simulate phone photos.
+
+| File | Description | How Generated |
+|---|---|---|
+| `clean_doc.png` | Perfect flat scan (baseline) | PIL: white page with black text + grid lines |
+| `angled_15deg.png` | Photo taken at 15° angle | OpenCV perspective warp of clean_doc |
+| `angled_30deg.png` | Steeper angle | Same, stronger warp |
+| `rotated_45deg.png` | Paper rotated 45° on table | Rotation + warp |
+| `dark_photo.png` | Underexposed photo | Brightness reduction -60% on clean_doc |
+| `bright_glare.png` | Overexposed with glare patch | Localized overexposure |
+| `low_res_640x480.png` | Low resolution phone photo | Downscale + upscale clean_doc |
+| `high_res_4k.png` | 4K resolution image | Upscale clean_doc to 3840x2160 |
+
+**Why synthetic over downloaded:**
+- Zero copyright concerns
+- Deterministic: we know exact corner coordinates for assertions
+- `generate_scanner_fixtures.py` stores expected corners alongside each image
+- Reproducible on any machine without network access
+- Total size: ~2MB for all 8 images
 
 #### Test Plan
 
@@ -786,7 +811,33 @@ LLM in 6.3.
 | 6.2.6 | Crop question regions preserving original image quality | `ai/segmenter.py` |
 | 6.2.7 | Generate PDF: each page = one question image + blank answer area | `ai/segmenter.py` |
 | 6.2.8 | Handle multi-column layouts | `ai/segmenter.py` |
-| 6.2.9 | Tests | `tests/unit/test_segmenter.py` |
+| 6.2.9 | Generate synthetic test fixtures | `tests/fixtures/generate_segmenter_fixtures.py` |
+| 6.2.10 | Tests | `tests/unit/test_segmenter.py` |
+
+#### Test Dataset (`tests/fixtures/segmenter/`)
+
+~10 synthetic worksheet images generated programmatically.
+Each image includes rendered text with known content and layout,
+so test assertions can verify exact question counts and positions.
+
+| File | Description | Expected Segments |
+|---|---|---|
+| `single_question.png` | One numbered question | 1 |
+| `three_questions.png` | "1. ... 2. ... 3." with gaps | 3 |
+| `no_gap_header.png` | "Section 1\n1. question..." (no blank line) | 1 (header excluded) |
+| `no_gap_three.png` | "1. ...2. ...3. ..." (no gaps at all) | 3 |
+| `section_with_questions.png` | "Practice Problems\n1. ... 2. ..." | 2 (header excluded) |
+| `geometry_with_figure.png` | Question text + rectangle/triangle shape | 1 (figure included) |
+| `sub_numbered.png` | "1.1 ... 1.2 ... 2.1 ..." | 3 |
+| `paren_lettered.png` | "(a) ... (b) ... (c) ..." | 3 |
+| `two_column.png` | Two-column layout, 3 questions per column | 6 |
+| `blank_page.png` | Empty white image | 0 |
+
+**Generation approach:** PIL renders text onto white images with known fonts.
+Figure images use OpenCV to draw shapes (triangles, rectangles, circles).
+Each fixture has a companion `.json` file with expected segmentation metadata.
+
+Total size: ~3MB for all 10 images + metadata.
 
 #### Test Plan
 
@@ -819,7 +870,33 @@ LLM in 6.3.
 | 6.3.4 | Settings UI for API key (keyring storage) | `ui/windows/settings.py` |
 | 6.3.5 | Display tutor response in meeting window | `ui/windows/meeting.py` |
 | 6.3.6 | Integration: segmented PDF → load into meeting | wiring |
-| 6.3.7 | Tests | `tests/unit/test_tutor.py` |
+| 6.3.7 | Generate test fixtures + mock API responses | `tests/fixtures/generate_tutor_fixtures.py` |
+| 6.3.8 | Tests | `tests/unit/test_tutor.py` |
+
+#### Test Dataset (`tests/fixtures/tutor/`)
+
+~4 individual question images (cropped from segmenter output) plus
+mock JSON API responses for deterministic unit testing without real API calls.
+
+| File | Description | Mock Response |
+|---|---|---|
+| `question_algebra.png` | "Solve x² + 3x - 4 = 0" | `mock_algebra_response.json` |
+| `question_geometry.png` | Triangle area problem with figure | `mock_geometry_response.json` |
+| `question_combo.png` | Combinatorics counting problem | `mock_combo_response.json` |
+| `question_chinese.png` | Chinese language math question | `mock_chinese_response.json` |
+
+Each `.json` mock follows the structured output format:
+```json
+{
+  "subject": "algebra",
+  "difficulty": 3,
+  "hints": ["hint1", "hint2", "hint3"],
+  "solution": "...",
+  "concepts": ["quadratic equation", "factoring"]
+}
+```
+
+Total size: ~1MB.
 
 #### Prompt Design Principles
 
