@@ -113,13 +113,14 @@ and maintain. We can migrate to WebRTC later if needed.
 | Canvas drawing | PySide6 `QPainter` + `QGraphicsScene` |
 | Image processing (Phase 2) | OpenCV (`cv2`) + Pillow |
 
-### 3.5 AI Assistant (Phase 2)
+### 3.5 AI Assistant (Phase 6)
 
-| Need | Package |
-|---|---|
-| Photo → scan | OpenCV perspective transform + adaptive threshold |
-| Question OCR | Multi-modal LLM API (OpenAI / Anthropic SDK) |
-| PDF generation | `reportlab` or `fpdf2` |
+| Need | Package | Runs locally? |
+|---|---|---|
+| Photo → scan | OpenCV (`cv2`) perspective transform + adaptive threshold | Yes |
+| Question segmentation | OpenCV connected components + gap detection | Yes |
+| PDF generation | PyMuPDF (`fitz`) — already used for PDF viewer | Yes |
+| LLM tutoring | Anthropic SDK (`anthropic`) or OpenAI SDK | No — API call |
 
 ### 3.6 Infrastructure
 
@@ -629,14 +630,54 @@ Paint overlay on PDF:
 - PDF chunks sent with header: `transfer_id:chunk_index:total_chunks:` prefix
 - Out-of-order chunk reassembly supported
 
-### Phase 6: AI Assistant (Future Phase)
-**Goal:** Photo scanner + question segmentation via LLM.
+### Phase 6: AI Assistant — Three Sub-Phases
 
-- [ ] Implement `ai/scanner.py` (OpenCV perspective correction)
-- [ ] Implement `ai/question_gen.py` (multi-modal LLM → question PDF)
+**Goal:** Photo → scanned image → question PDF → LLM tutoring.
+Target difficulty: AMC 12 level (US middle/high school math competition).
+
+#### Sub-phase 6.1: Photo → High-Quality Scanned Image (Local, No LLM)
+**Deliverable:** A photo of a worksheet/exam becomes a clean, perspective-corrected PNG.
+
+- [ ] Implement `ai/scanner.py` — OpenCV-based document scanner
+- [ ] Edge detection + perspective correction (4-point transform)
+- [ ] Adaptive contrast/brightness normalization
+- [ ] Output format: **PNG** (lossless, preserves text edges and line art)
+- [ ] Scan UI: open image file or paste from clipboard
+
+**Why PNG over JPEG:** PNG is lossless — critical for text and geometric figures.
+JPEG compression introduces artifacts that degrade text legibility and
+fine line art (especially geometry plots).
+
+#### Sub-phase 6.2: Question Segmentation → One-Question-Per-Page PDF (Local, No LLM)
+**Deliverable:** A scanned image is split into individual questions, each on its own PDF page with blank answer space.
+
+- [ ] Implement `ai/segmenter.py` — question region detection
+- [ ] Detect horizontal white-space gaps to split question boundaries
+- [ ] Detect figure/plot regions (non-text connected components: larger bounding boxes, color/shading)
+- [ ] Preserve original image quality — crop regions, do NOT OCR or re-render text
+- [ ] Generate PDF: each page = one question image + blank answer area
+- [ ] Handle multi-column layouts
+- [ ] Handle geometry problems: figure region detected and kept alongside question
+
+**Key insight:** No OCR needed. We detect visual regions (text blocks, figures)
+and preserve the original pixels. A geometry problem's figure stays as an image,
+not as reconstructed vector art. This is robust even for complex diagrams.
+
+#### Sub-phase 6.3: LLM-Powered Tutoring (API Required)
+**Deliverable:** A reusable prompt that sends a question image to a multimodal LLM and receives structured tutoring feedback.
+
+- [ ] Design reusable tutoring prompt for AMC 12 level math
+- [ ] Implement `ai/tutor.py` — LLM API integration (Claude / GPT-4V)
+- [ ] Prompt engineering: structured output (concept identification, step-by-step hints, solution)
 - [ ] Settings UI for API key configuration
-- [ ] Generate exam PDFs (1 question per page + blank space)
-- [ ] Integration with content sharing (use generated PDFs in meetings)
+- [ ] Display tutor response in meeting window
+- [ ] Integration with content sharing: use segmented PDFs directly in meetings
+
+**Prompt design principles:**
+- Reusable across question types (algebra, geometry, combinatorics, number theory)
+- Structured output: concept tags, difficulty estimate, hint ladder, full solution
+- Optimized for multimodal input (image + minimal text context)
+- Cost-efficient: single API call per question, no conversation back-and-forth
 
 ---
 

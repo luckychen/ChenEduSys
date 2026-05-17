@@ -709,89 +709,148 @@ tests/
 
 ---
 
-## Phase 6: AI Assistant (Future)
+## Phase 6: AI Assistant (Three Sub-Phases)
 
-**Deliverable:** Photo scanner + exam question PDF generation via LLM.
+**Deliverable:** Photo → scanned image → one-question-per-page PDF → LLM tutoring.
+Target difficulty: AMC 12 level (US middle/high school math competition).
 
 ### Depends on
 - Phase 5 (content sharing — generated PDFs can be shared in meetings)
 
-### Tasks (High-Level)
+### Architecture
 
-| # | Task | Description |
+```
+Photo ──► [6.1 Scanner] ──► Scanned PNG
+                                    │
+                              [6.2 Segmenter] ──► Question PDF (1 per page)
+                                    │
+                              [6.3 LLM Tutor] ──► Structured tutorial
+```
+
+Sub-phases 6.1 and 6.2 run **locally** (no API, no LLM). Only 6.3 requires
+an external API call.
+
+---
+
+### Sub-Phase 6.1: Photo → High-Quality Scanned Image
+
+**Deliverable:** A phone photo becomes a clean, perspective-corrected PNG.
+
+#### Tasks
+
+| # | Task | Files |
 |---|---|---|
-| 6.1 | Photo perspective correction | OpenCV: detect paper edges, warp to rectangle |
-| 6.2 | Image enhancement | Adaptive threshold, contrast boost → "scanned" look |
-| 6.3 | LLM API integration | Send scanned image to multi-modal LLM |
-| 6.4 | Question extraction | Parse LLM response → structured question objects |
-| 6.5 | Exam PDF generation | Create PDF with 1 question per page + blank space |
-| 6.6 | Settings UI for API key | Secure API key storage and configuration |
-| 6.7 | Integration with content sharing | Use generated PDFs in meetings |
+| 6.1.1 | Edge detection + 4-point perspective transform | `ai/scanner.py` |
+| 6.1.2 | Adaptive contrast/brightness normalization | `ai/scanner.py` |
+| 6.1.3 | Output as PNG (lossless, preserves text/line art) | `ai/scanner.py` |
+| 6.1.4 | Scanner UI: file open or clipboard paste | `ui/windows/scanner.py` |
+| 6.1.5 | Tests | `tests/unit/test_scanner.py` |
 
-### Acceptance Criteria
-- [ ] Phone photo of paper → looks like a scan
-- [ ] Math question in photo → recognized by LLM
-- [ ] Multiple questions → formatted PDF with blank space
-- [ ] Generated PDF can be loaded into a meeting
-
-### Test Plan: Phase 6
-
-#### Unit Tests (`tests/unit/`)
+#### Test Plan
 
 **`test_scanner.py`**
 | Test Case | Input | Expected Result |
 |---|---|---|
 | Perspective correction | Angled photo of paper | Output is top-down rectangle |
-| Edge detection | Photo with clear paper edges | 4 corners detected accurately |
-| No paper detected | Photo without a paper/document | Returns None or error "no document found" |
-| Multiple papers in frame | Photo with 2 papers | Detects largest or prompts user to crop |
-| Low resolution image | 640x480 photo | Still produces usable output (with quality warning) |
-| High resolution image | 4K photo | Processed without OOM, reasonable processing time |
-| Skewed 45 degrees | Paper rotated 45° | Corrected to upright orientation |
-| Dark photo | Underexposed image | Enhancement brightens to readable level |
-| Blurry photo | Out-of-focus image | Best-effort sharpening, quality warning logged |
+| Edge detection | Photo with clear paper edges | 4 corners detected |
+| No paper detected | Random photo without paper | Returns None or error |
+| Skewed 45 degrees | Paper rotated 45° | Corrected to upright |
+| Dark photo | Underexposed image | Brightened to readable |
+| High resolution | 4K photo | Processed without OOM |
+| Low resolution | 640x480 | Usable output with quality warning |
+| Output is PNG | Any valid input | Lossless PNG produced |
 
-**`test_question_gen.py`**
+---
+
+### Sub-Phase 6.2: Question Segmentation → One-Question-Per-Page PDF
+
+**Deliverable:** Scanned image is split into questions; each becomes a PDF page.
+
+**Key insight:** No OCR needed. We detect visual regions (text blocks, figures)
+using image analysis and preserve the original pixels. Geometry figures stay
+as images — no attempt to reconstruct vector art.
+
+#### Tasks
+
+| # | Task | Files |
+|---|---|---|
+| 6.2.1 | Horizontal gap detection to find question boundaries | `ai/segmenter.py` |
+| 6.2.2 | Figure/plot region detection (non-text connected components) | `ai/segmenter.py` |
+| 6.2.3 | Crop question regions preserving original image quality | `ai/segmenter.py` |
+| 6.2.4 | Generate PDF: each page = one question image + blank answer area | `ai/segmenter.py` |
+| 6.2.5 | Handle multi-column layouts | `ai/segmenter.py` |
+| 6.2.6 | Tests | `tests/unit/test_segmenter.py` |
+
+#### Test Plan
+
+**`test_segmenter.py`**
 | Test Case | Input | Expected Result |
 |---|---|---|
-| Single math question | Scanned image with `x² + 3x - 4 = 0` | Question recognized, PDF with 1 page generated |
-| Multiple questions | Image with 3 questions | PDF with 3 pages (1 question + blank per page) |
-| LLM API unreachable | Mock API failure | Clear error "API unavailable", no crash |
-| Invalid API key | Wrong API key | Clear error "authentication failed" |
-| LLM returns garbage | Unexpected LLM response | Fallback: show raw text, don't crash |
-| Empty scan | Blank paper scan | "No questions detected" message |
-| Mixed question types | Math + text questions | All recognized, each on separate page |
+| Single question | Image with 1 question | PDF with 1 page |
+| Multiple questions | Image with 3 numbered questions | PDF with 3 pages |
+| Question with figure | Geometry problem with plot | Figure region included on same page |
+| Dense layout | Questions with minimal spacing | Boundaries detected at gaps |
+| Empty scan | Blank paper | "No questions detected" |
+| Multi-column | Two-column exam layout | Correct column splitting |
+| Question overflow | Very long single question | Content fits on page |
 
-#### Integration Tests (`tests/integration/`)
+---
+
+### Sub-Phase 6.3: LLM-Powered Tutoring
+
+**Deliverable:** Reusable prompt + API integration for AMC 12 level math tutoring.
+
+#### Tasks
+
+| # | Task | Files |
+|---|---|---|
+| 6.3.1 | Design reusable tutoring prompt | `ai/tutor_prompt.py` |
+| 6.3.2 | API integration (Claude / GPT-4V multimodal) | `ai/tutor.py` |
+| 6.3.3 | Structured output parsing (concept, hints, solution) | `ai/tutor.py` |
+| 6.3.4 | Settings UI for API key (keyring storage) | `ui/windows/settings.py` |
+| 6.3.5 | Display tutor response in meeting window | `ui/windows/meeting.py` |
+| 6.3.6 | Integration: segmented PDF → load into meeting | wiring |
+| 6.3.7 | Tests | `tests/unit/test_tutor.py` |
+
+#### Prompt Design Principles
+
+1. **Single-call efficiency**: one image + minimal context → full tutoring response
+2. **Structured output**: concept tags, difficulty (1-5), hint ladder (3 hints, escalating), full solution
+3. **Subject coverage**: algebra, geometry, combinatorics, number theory, probability
+4. **Format**: JSON output for reliable parsing
+5. **Language**: support English and Chinese question text
+
+#### Test Plan
+
+**`test_tutor.py`**
+| Test Case | Input | Expected Result |
+|---|---|---|
+| Structured prompt generation | Question image metadata | Valid prompt with context |
+| API response parsing | Mock JSON response | Structured tutoring object |
+| API unreachable | Connection error | Clear error, no crash |
+| Invalid API key | 401 response | Clear "auth failed" message |
+| Malformed API response | Garbage JSON | Fallback gracefully |
+| Prompt reuse | Same prompt, different images | Correct context injection |
+
+#### Integration Tests
 
 **`test_ai_to_meeting.py`**
 | Test Case | Input | Expected Result |
 |---|---|---|
-| Scan → question → PDF → meeting | Full pipeline from photo to content sharing | Generated PDF loads into meeting correctly |
-| API key save/load | Set API key in settings, restart app | API key persists securely |
-| Multiple languages | Questions in Chinese + English | Both recognized by LLM |
-
-#### Edge-Case Tests (`tests/edge_cases/`)
-
-| Test Case | Input | Expected Result |
-|---|---|---|
-| Very long question | Full page of text as single question | PDF page handles overflow (continues to next page) |
-| Hand-drawn diagram | Photo with diagram + text | LLM handles gracefully, text extracted |
-| LLM rate limit | Send 20 requests rapidly | Queue/retry, no crash, user sees "rate limited" |
-| API key with special characters | Key containing `+`, `/`, `=` | Stored and retrieved correctly |
-| Camera permission denied | No camera access | Clear message, manual file upload option works |
+| Scan → segment → PDF → meeting | Full pipeline | PDF loads in meeting |
+| API key persistence | Set key, restart | Key survives restart |
 
 #### Smoke Tests (Manual)
 
 | Step | Action | Expected Result |
 |---|---|---|
-| 1 | Take photo of handwritten math question | Photo captured |
-| 2 | Click "Scan" | Image corrected to flat, readable view |
-| 3 | Click "Extract Questions" | Questions recognized and listed |
-| 4 | Click "Generate Exam PDF" | PDF generated, each question on separate page |
-| 5 | Load generated PDF into a meeting | PDF appears on both teacher and student screens |
-| 6 | Test with Chinese text | Characters recognized correctly |
-| 7 | Test with blurry photo | Best-effort result with quality warning |
+| 1 | Open a photo of a worksheet | Image loads in scanner |
+| 2 | Click "Scan" | Clean perspective-corrected PNG |
+| 3 | Click "Segment" | Questions separated into PDF pages |
+| 4 | Load segmented PDF into meeting | PDF appears on teacher + student screens |
+| 5 | Click "Get Tutorial" on a question | LLM returns step-by-step tutorial |
+| 6 | Test with geometry problem (figure) | Figure preserved in segmented PDF |
+| 7 | Test with Chinese text | Recognized and handled |
 
 ---
 
