@@ -1,0 +1,5 @@
+# Hub server standalone dependencies
+# Install: pip install -r requirements.txt
+aiohttp>=3.9,<4
+argon2-cffi>=23.1
+PyJWT>=2.8,<3

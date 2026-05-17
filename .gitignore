@@ -10,3 +10,27 @@ build/
 .chenedusys/
 .eggs/
 *.egg
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
+
+# Generated files
+*.pdf
+!tests/fixtures/**/*.pdf
