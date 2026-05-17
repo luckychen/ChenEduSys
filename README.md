@@ -31,6 +31,12 @@ python -m chenedusys      # launch the app
 
 The only assumption is that you have **conda** (Miniconda or Anaconda) installed.
 
+> **Anaconda users:** if `conda env create` prompts about Terms of Service, run:
+> ```bash
+> conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+> ```
+> Or use Miniconda (no TOS required). The `environment.yml` uses only `conda-forge`.
+
 ### Linux (Debian/Ubuntu)
 
 Install these system packages **before** creating the conda environment:
