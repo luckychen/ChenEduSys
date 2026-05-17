@@ -19,6 +19,8 @@ dependencies = [
     "PyJWT>=2.8,<3",
     "keyring>=24.0",
     "cryptography>=42.0",
+    "opuslib>=3.0",
+    "PyAudio>=0.2",
 ]
 
 [project.optional-dependencies]

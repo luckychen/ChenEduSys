@@ -542,17 +542,27 @@ Paint overlay on PDF:
 - Duplicate peer handling: old connection closed, new accepted (identity check via object reference)
 - FrameReader handles TCP fragmentation correctly (partial frame buffering)
 
-### Phase 4: Audio Communication (Week 9-10)
+### Phase 4: Audio Communication — COMPLETE
 **Goal:** Real-time voice chat over P2P.
 
-- [ ] Implement `services/audio.py` (capture, encode, decode, playback)
-- [ ] Audio capture via PySide6 QAudioInput
-- [ ] Audio playback via PySide6 QAudioOutput
-- [ ] Opus encoding/decoding for bandwidth efficiency
-- [ ] Stream audio on AUDIO channel (channel 0x02)
-- [ ] Build `ui/widgets/audio_controls.py` (mute/unmute, volume)
-- [ ] Handle multiple students (mix audio streams for teacher)
-- [ ] Test latency and quality
+- [x] Implement `services/audio.py` (capture, encode, decode, playback)
+- [x] Audio capture via PyAudio (cross-platform, pip-installable)
+- [x] Audio playback via PyAudio
+- [x] Opus encoding/decoding for bandwidth efficiency
+- [x] Stream audio on AUDIO channel (channel 0x02)
+- [x] Build `ui/widgets/audio_controls.py` (mute/unmute, volume)
+- [x] Handle multiple students (mix audio streams for teacher)
+- [x] Test latency and quality
+
+**Phase 4 completion notes:**
+- 235 tests total (Phase 0 + 1 + 2 + 3 + 4), all passing
+- Audio I/O: PyAudio (pip-installable, bundles PortAudio on Windows/macOS)
+- Codec: Opus via opuslib (voip mode, 48kHz, 20ms frames, 32kbps)
+- AudioCapture: background thread reads mic, callbacks on encoded frames
+- AudioPlayback: volume control with sample-level scaling
+- AudioMixer: sums multiple PCM streams with 16-bit clipping
+- AudioService: ties capture→encode→network and network→decode→playback
+- AudioControls widget: mute button (red/green), volume slider
 
 ### Phase 5: Content Sharing (Week 11-13)
 **Goal:** PDF + paint synchronization between teacher and students.
