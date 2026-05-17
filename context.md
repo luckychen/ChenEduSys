@@ -101,9 +101,9 @@ and maintain. We can migrate to WebRTC later if needed.
 
 | Choice | Reason |
 |---|---|
-| `QAudioInput` / `QAudioOutput` | Already part of PySide6, no extra deps |
-| Opus codec (via `opuslib`) | Low-latency voice, well-tested |
-| `pyogg` or raw PCM fallback | If Opus proves hard to install |
+| PyAudio for capture/playback | Cross-platform, pip-installable, no Kerberos conflict like QtMultimedia |
+| Opus codec (via `opuslib`) | Low-latency voice, well-tested, 48kHz/20ms frames |
+| Background thread for capture | Non-blocking audio read loop |
 
 ### 3.4 Content & Paint
 
@@ -131,6 +131,48 @@ and maintain. We can migrate to WebRTC later if needed.
 | Config | `pydantic-settings` (TOML/JSON config files) |
 | Testing | `pytest` + `pytest-qt` + `pytest-asyncio` |
 | CI | GitHub Actions (lint, test, build) |
+
+### 3.7 Installation
+
+All Python packages are pip-installable within a conda environment.
+No system-level package manager needed on Windows. On Linux, two
+small system libraries are required for audio.
+
+**Python dependencies (pip, cross-platform):**
+
+| Package | Purpose |
+|---|---|
+| PySide6 >=6.6 | GUI framework |
+| pydantic + pydantic-settings | Config and validation |
+| msgpack | Binary serialization for P2P protocol |
+| aiohttp + aiohttp-cors | Hub server (aiohttp) and HTTP client |
+| argon2-cffi | Password hashing |
+| PyJWT | JWT token auth |
+| keyring | OS-native secure token storage |
+| cryptography | TLS certificate generation |
+| opuslib | Opus audio codec |
+| PyAudio | Microphone capture and speaker playback |
+
+**Linux system dependencies (apt):**
+
+```bash
+sudo apt-get install libportaudio2 libasound2 libopus0
+```
+
+These provide the C shared libraries that PyAudio (`libportaudio`)
+and opuslib (`libopus`) link against. ALSA (`libasound2`) is the
+Linux sound system.
+
+**Windows:** No system packages needed. PyAudio and opuslib ship
+pre-built wheels that bundle the required DLLs.
+
+**Install steps (both platforms):**
+
+```bash
+conda env create -f environment.yml
+conda activate chenedusys
+python -m pytest tests/ -q   # verify
+```
 
 ---
 
