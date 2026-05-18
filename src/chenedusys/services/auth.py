@@ -83,8 +83,11 @@ class AuthService:
             ) as resp:
                 body = await resp.json()
                 if resp.status != 200:
-                    self._bus.publish(LoginFail(reason=body.get("reason", "Login failed")))
-                    raise AuthError(body.get("reason", f"Login failed ({resp.status})"))
+                    reason = body.get("reason", "Login failed")
+                    self._bus.publish(LoginFail(reason=reason))
+                    if resp.status == 403 and "pending" in reason:
+                        raise AccountPendingError(reason)
+                    raise AuthError(reason)
 
                 self._token = body["token"]
                 user = body["user"]
@@ -147,3 +150,7 @@ class AuthService:
 
 class AuthError(Exception):
     """Raised on authentication failure."""
+
+
+class AccountPendingError(AuthError):
+    """Raised when login is attempted with an unapproved account."""

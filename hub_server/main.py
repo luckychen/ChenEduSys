@@ -7,6 +7,7 @@ import os
 
 from aiohttp import web
 
+from hub_server.admin import setup_admin_routes
 from hub_server.auth import hash_password, new_id, verify_password
 from hub_server.database import Database
 from hub_server.signaling import (
@@ -24,6 +25,21 @@ logger = logging.getLogger(__name__)
 
 def _error(status: int, reason: str) -> web.Response:
     return web.json_response({"reason": reason}, status=status)
+
+
+def seed_admin(db: Database) -> str | None:
+    """Create initial admin account. Returns the password (auto-generated if not set via env)."""
+    admin_user = os.environ.get("CHENEDUSYS_ADMIN_USER", "admin")
+    existing = db.get_user_by_username(admin_user)
+    if existing is not None:
+        return None
+
+    import secrets
+    admin_password = os.environ.get("CHENEDUSYS_ADMIN_PASSWORD") or secrets.token_urlsafe(16)
+    pw_hash = hash_password(admin_password)
+    db.create_user(new_id(), admin_user, pw_hash, role="admin", status="active")
+    logger.info("Seeded admin user '%s'", admin_user)
+    return admin_password
 
 
 # ------------------------------------------------------------------
@@ -54,7 +70,7 @@ async def register(request: web.Request) -> web.Response:
     db.create_user(user_id, username, pw_hash, role)
 
     return web.json_response(
-        {"id": user_id, "username": username, "role": role},
+        {"id": user_id, "username": username, "role": role, "status": "pending"},
         status=201,
     )
 
@@ -69,6 +85,11 @@ async def login(request: web.Request) -> web.Response:
     user = db.get_user_by_username(username)
     if user is None or not verify_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(text='{"reason": "Invalid username or password"}', content_type="application/json")
+
+    if user.get("status") == "pending":
+        raise web.HTTPForbidden(text='{"reason": "Account pending approval"}', content_type="application/json")
+    if user.get("status") == "rejected":
+        raise web.HTTPForbidden(text='{"reason": "Account rejected"}', content_type="application/json")
 
     from hub_server.auth import create_token
     token = create_token(user["id"], user["username"], user["role"])
@@ -113,6 +134,14 @@ async def health(request: web.Request) -> web.Response:
 def create_app(db_path: str | None = None) -> web.Application:
     app = web.Application()
     app["db"] = Database(db_path)
+
+    # Seed admin account
+    admin_password = seed_admin(app["db"])
+    if admin_password is not None:
+        logger.warning("Admin password (save this — shown once): %s", admin_password)
+
+    # Admin dashboard
+    setup_admin_routes(app)
 
     # Auth
     app.router.add_post("/register", register)

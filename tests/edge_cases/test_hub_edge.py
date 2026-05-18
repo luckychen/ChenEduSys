@@ -3,6 +3,14 @@
 from __future__ import annotations
 
 
+async def _approve(app, username):
+    """Approve a user directly via DB (bypasses admin auth)."""
+    db = app["db"]
+    user = db.get_user_by_username(username)
+    if user:
+        db.update_user_status(user["id"], "active")
+
+
 class TestEdgeCases:
 
     async def test_concurrent_registrations(self, aiohttp_client, tmp_path):
@@ -26,6 +34,7 @@ class TestEdgeCases:
 
         resp = await client.post("/register", json={"username": "用户名", "password": "password123"})
         assert resp.status == 201
+        await _approve(app, "用户名")
         login = await client.post("/login", json={"username": "用户名", "password": "password123"})
         assert login.status == 200
 
@@ -36,6 +45,7 @@ class TestEdgeCases:
 
         # Create teacher + meeting with max 2 participants
         await client.post("/register", json={"username": "tf", "password": "password123", "role": "teacher"})
+        await _approve(app, "tf")
         login = await client.post("/login", json={"username": "tf", "password": "password123"})
         t_token = (await login.json())["token"]
 
@@ -46,6 +56,7 @@ class TestEdgeCases:
         for i in range(2):
             name = f"sf{i}"
             await client.post("/register", json={"username": name, "password": "password123"})
+            await _approve(app, name)
             login_resp = await client.post("/login", json={"username": name, "password": "password123"})
             tk = (await login_resp.json())["token"]
             r = await client.post(f"/meetings/{mid}/join", headers={"Authorization": f"Bearer {tk}"})
@@ -53,6 +64,7 @@ class TestEdgeCases:
 
         # One more should fail
         await client.post("/register", json={"username": "overflow", "password": "password123"})
+        await _approve(app, "overflow")
         login_resp = await client.post("/login", json={"username": "overflow", "password": "password123"})
         tk = (await login_resp.json())["token"]
         r = await client.post(f"/meetings/{mid}/join", headers={"Authorization": f"Bearer {tk}"})
@@ -65,6 +77,7 @@ class TestEdgeCases:
 
         pw = "p@$$w0rd!#%^&*()"
         await client.post("/register", json={"username": "spec", "password": pw})
+        await _approve(app, "spec")
         login = await client.post("/login", json={"username": "spec", "password": pw})
         assert login.status == 200
 
@@ -76,6 +89,7 @@ class TestEdgeCases:
         app1 = create_app(db_path)
         client1 = await aiohttp_client(app1)
         await client1.post("/register", json={"username": "persist", "password": "password123"})
+        await _approve(app1, "persist")
         login = await client1.post("/login", json={"username": "persist", "password": "password123"})
         token = (await login.json())["token"]
 

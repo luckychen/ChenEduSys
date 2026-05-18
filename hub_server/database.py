@@ -19,6 +19,17 @@ class Database:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._create_tables()
+        self._migrate_schema()
+
+    def _migrate_schema(self) -> None:
+        """Idempotent schema migrations for existing databases."""
+        cursor = self._conn.execute("PRAGMA table_info(users)")
+        columns = {row["name"] for row in cursor.fetchall()}
+        if "status" not in columns:
+            self._conn.execute(
+                "ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"
+            )
+            self._conn.commit()
 
     def _create_tables(self) -> None:
         self._conn.executescript("""
@@ -27,6 +38,7 @@ class Database:
                 username    TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 role        TEXT NOT NULL DEFAULT 'student',
+                status      TEXT NOT NULL DEFAULT 'active',
                 created_at  TEXT DEFAULT (datetime('now'))
             );
             CREATE TABLE IF NOT EXISTS meetings (
@@ -52,10 +64,13 @@ class Database:
     # Users
     # ------------------------------------------------------------------
 
-    def create_user(self, user_id: str, username: str, password_hash: str, role: str = "student") -> None:
+    def create_user(
+        self, user_id: str, username: str, password_hash: str,
+        role: str = "student", status: str = "pending",
+    ) -> None:
         self._conn.execute(
-            "INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)",
-            (user_id, username, password_hash, role),
+            "INSERT INTO users (id, username, password_hash, role, status) VALUES (?, ?, ?, ?, ?)",
+            (user_id, username, password_hash, role, status),
         )
         self._conn.commit()
 
@@ -70,6 +85,32 @@ class Database:
             "SELECT * FROM users WHERE id = ?", (user_id,)
         ).fetchone()
         return dict(row) if row else None
+
+    def list_pending_users(self) -> list[dict]:
+        rows = self._conn.execute(
+            "SELECT id, username, role, status, created_at FROM users WHERE status = 'pending' ORDER BY created_at ASC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def list_all_users(self) -> list[dict]:
+        rows = self._conn.execute(
+            "SELECT id, username, role, status, created_at FROM users ORDER BY created_at DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def update_user_status(self, user_id: str, status: str) -> None:
+        self._conn.execute(
+            "UPDATE users SET status = ? WHERE id = ?",
+            (status, user_id),
+        )
+        self._conn.commit()
+
+    def update_user_role(self, user_id: str, role: str) -> None:
+        self._conn.execute(
+            "UPDATE users SET role = ? WHERE id = ?",
+            (role, user_id),
+        )
+        self._conn.commit()
 
     # ------------------------------------------------------------------
     # Meetings

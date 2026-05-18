@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from chenedusys.core.event_bus import EventBus
-from chenedusys.services.auth import AuthService, AuthError
+from chenedusys.services.auth import AuthService, AuthError, AccountPendingError
 
 
 class LoginWindow(QWidget):
@@ -61,6 +61,7 @@ class LoginWindow(QWidget):
 
         self._status = QLabel("")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._status.setWordWrap(True)
         self._status.setStyleSheet("color: red; font-size: 12px;")
         layout.addWidget(self._status)
 
@@ -93,16 +94,26 @@ class LoginWindow(QWidget):
             user = await self.auth.login(username, password)
             self._status.setText("")
             self.login_success.emit(user)
+        except AccountPendingError:
+            self._status.setStyleSheet("color: #e6a800; font-size: 12px;")
+            self._status.setText("Your account is waiting for admin approval.")
         except AuthError as e:
+            self._status.setStyleSheet("color: red; font-size: 12px;")
             self._status.setText(str(e))
         finally:
             self._login_btn.setEnabled(True)
 
     async def _do_register(self, username: str, password: str, role: str) -> None:
         try:
-            await self.auth.register(username, password, role)
-            self._status.setText("Registered! Now login.")
+            body = await self.auth.register(username, password, role)
+            if body.get("status") == "pending":
+                self._status.setStyleSheet("color: #e6a800; font-size: 12px;")
+                self._status.setText("Registered! Waiting for admin approval before you can login.")
+            else:
+                self._status.setStyleSheet("color: green; font-size: 12px;")
+                self._status.setText("Registered! Now login.")
         except AuthError as e:
+            self._status.setStyleSheet("color: red; font-size: 12px;")
             self._status.setText(str(e))
         finally:
             self._register_btn.setEnabled(True)

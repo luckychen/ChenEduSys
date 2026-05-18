@@ -22,6 +22,12 @@ class TestUserCRUD:
         assert user is not None
         assert user["id"] == "u1"
         assert user["role"] == "student"
+        assert user["status"] == "pending"  # default for new users
+
+    def test_create_user_with_active_status(self, db):
+        db.create_user("u1", "admin", "hash", "admin", status="active")
+        user = db.get_user_by_username("admin")
+        assert user["status"] == "active"
 
     def test_get_nonexistent_user(self, db):
         assert db.get_user_by_username("nobody") is None
@@ -36,6 +42,37 @@ class TestUserCRUD:
         user = db.get_user_by_username("alice")
         assert user["password_hash"].startswith("$argon2")
         assert user["password_hash"] != "plaintext"
+
+    def test_update_user_status(self, db):
+        db.create_user("u1", "alice", "hash", "student")
+        db.update_user_status("u1", "active")
+        user = db.get_user_by_id("u1")
+        assert user["status"] == "active"
+
+    def test_update_user_role(self, db):
+        db.create_user("u1", "alice", "hash", "student")
+        db.update_user_role("u1", "teacher")
+        user = db.get_user_by_id("u1")
+        assert user["role"] == "teacher"
+
+    def test_list_pending_users(self, db):
+        db.create_user("u1", "alice", "hash", "student", status="pending")
+        db.create_user("u2", "bob", "hash", "teacher", status="active")
+        pending = db.list_pending_users()
+        assert len(pending) == 1
+        assert pending[0]["username"] == "alice"
+
+    def test_list_all_users(self, db):
+        db.create_user("u1", "alice", "hash", "student")
+        db.create_user("u2", "bob", "hash", "teacher")
+        all_users = db.list_all_users()
+        assert len(all_users) == 2
+
+    def test_reject_user(self, db):
+        db.create_user("u1", "alice", "hash", "student")
+        db.update_user_status("u1", "rejected")
+        user = db.get_user_by_id("u1")
+        assert user["status"] == "rejected"
 
 
 class TestMeetingCRUD:

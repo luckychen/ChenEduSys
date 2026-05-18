@@ -120,32 +120,73 @@ chenedusys
 
 ## Hub Server (Cloud Deployment)
 
-The hub server runs on a cloud VM and handles user accounts and meeting coordination. It is a standalone aiohttp application with no dependency on the client package.
+The hub server runs on a cloud VM and handles user accounts, meeting coordination, and the admin dashboard. It is a standalone aiohttp application with no dependency on the client package — you only need Python 3.10+ and pip.
 
-### Deploy
+### New User Approval Flow
+
+All new registrations start in **"pending"** status. An admin must approve them before they can log in.
+
+1. User registers through the client app → account is "pending"
+2. Admin accesses the dashboard via SSH tunnel → approves or rejects
+3. Approved users can log in; rejected users see "Account rejected"
+
+### Deploy to Your Cloud Server
+
+These instructions work on any Linux server (AWS EC2, Google Cloud, DigitalOcean, etc.) with Python 3.10+ installed.
 
 ```bash
-# 1. Copy hub server files to your server
-scp -r hub_server/ user@your-server:~/chenedusys/
+# 1. Clone the repo on your server
+git clone https://github.com/luckychen/ChenEduSys.git
+cd ChenEduSys
 
-# 2. SSH in and install dependencies
-ssh user@your-server
-cd ~/chenedusys
+# 2. Install hub server dependencies
 pip install -r hub_server/requirements.txt
 
-# 3. Set a JWT secret and start
-export CHENEDUSYS_JWT_SECRET='your-secret-key-here'
+# 3. Set environment variables
+export CHENEDUSYS_JWT_SECRET='your-random-secret-key-here'
+export CHENEDUSYS_ADMIN_PASSWORD='choose-a-strong-admin-password'
+
+# 4. Start the server
 PYTHONPATH=. python3 -m hub_server.main
 ```
 
-The server listens on **port 8443** by default (`CHENEDUSYS_HUB_PORT` env var to override). Open that port in your firewall.
+The server listens on **port 8443** by default. Open that port in your cloud firewall / security group.
 
-### Verify
+#### Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `CHENEDUSYS_JWT_SECRET` | `change-me-in-production` | Secret for signing JWT tokens and admin sessions — **set this!** |
+| `CHENEDUSYS_ADMIN_USER` | `admin` | Admin dashboard username |
+| `CHENEDUSYS_ADMIN_PASSWORD` | *(auto-generated)* | Admin password. If unset, a random one is printed once at startup. |
+| `CHENEDUSYS_HUB_PORT` | `8443` | Server listen port |
+| `CHENEDUSYS_HUB_DB` | `~/.chenedusys/hub.db` | SQLite database path |
+
+#### Verify the Server
 
 ```bash
 curl http://YOUR_SERVER_IP:8443/health
 # {"status": "ok"}
 ```
+
+### Admin Dashboard
+
+The admin dashboard is accessible only from **localhost** — you connect via SSH tunnel so the dashboard is never exposed to the public internet.
+
+```bash
+# From your local machine, tunnel port 8443
+ssh -L 8443:localhost:8443 user@your-server
+
+# Open in your browser
+# http://localhost:8443/admin
+```
+
+Log in with the admin credentials you set in `CHENEDUSYS_ADMIN_PASSWORD` (or the auto-generated one from server startup logs). From there you can:
+
+- View pending registrations
+- Approve users and assign roles (teacher / student)
+- Reject registrations
+- View all users and their status
 
 ## Configuration
 
@@ -158,6 +199,11 @@ ChenEduSys uses a TOML config file at `~/.chenedusys/config.toml`. All settings 
 | P2P port range | `9100-9200` | `CHENEDUSYS_P2P_PORT_RANGE_START` / `END` |
 | STUN servers | `stun:stun.l.google.com:19302` | `CHENEDUSYS_P2P_STUN_SERVERS` |
 | Audio sample rate | `48000` | `CHENEDUSYS_AUDIO_SAMPLE_RATE` |
+| JWT secret | `change-me-in-production` | `CHENEDUSYS_JWT_SECRET` |
+| Admin username | `admin` | `CHENEDUSYS_ADMIN_USER` |
+| Admin password | *(auto-generated)* | `CHENEDUSYS_ADMIN_PASSWORD` |
+| Hub server port | `8443` | `CHENEDUSYS_HUB_PORT` |
+| Database path | `~/.chenedusys/hub.db` | `CHENEDUSYS_HUB_DB` |
 
 ## Architecture
 
@@ -196,7 +242,7 @@ src/chenedusys/
 ├── ui/            # PySide6 windows and widgets
 └── ai/            # Document scanner, question segmenter, LLM tutor
 hub_server/        # Standalone hub server (deploy to cloud)
-tests/             # Unit, integration, edge-case tests (346 total)
+tests/             # Unit, integration, edge-case tests (372 total)
 ```
 
 ## Troubleshooting

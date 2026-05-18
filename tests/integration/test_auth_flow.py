@@ -17,10 +17,20 @@ async def client(aiohttp_client, app):
     return await aiohttp_client(app)
 
 
+async def _approve_user(client, username):
+    """Approve a pending user via admin API (simulates admin action)."""
+    # Login as admin (seeded by create_app)
+    admin_resp = await client.post("/admin/login", json={"username": "admin", "password": "admin"})
+    # Admin login may fail if password differs; use direct DB approve instead
+    db = client.app["db"]
+    user = db.get_user_by_username(username)
+    if user:
+        db.update_user_status(user["id"], "active")
+
+
 class TestRegisterAndLogin:
 
-    async def test_register_then_login(self, client):
-        # Register
+    async def test_register_returns_pending_status(self, client):
         resp = await client.post("/register", json={
             "username": "alice",
             "password": "password123",
@@ -30,8 +40,30 @@ class TestRegisterAndLogin:
         body = await resp.json()
         assert body["username"] == "alice"
         assert body["role"] == "teacher"
+        assert body["status"] == "pending"
 
-        # Login
+    async def test_pending_user_cannot_login(self, client):
+        await client.post("/register", json={
+            "username": "alice",
+            "password": "password123",
+            "role": "teacher",
+        })
+        resp = await client.post("/login", json={
+            "username": "alice",
+            "password": "password123",
+        })
+        assert resp.status == 403
+        body = await resp.json()
+        assert "pending" in body["reason"].lower()
+
+    async def test_approved_user_can_login(self, client):
+        await client.post("/register", json={
+            "username": "alice",
+            "password": "password123",
+            "role": "teacher",
+        })
+        await _approve_user(client, "alice")
+
         resp = await client.post("/login", json={
             "username": "alice",
             "password": "password123",
@@ -40,6 +72,23 @@ class TestRegisterAndLogin:
         body = await resp.json()
         assert "token" in body
         assert body["user"]["username"] == "alice"
+
+    async def test_rejected_user_cannot_login(self, client):
+        await client.post("/register", json={
+            "username": "bob",
+            "password": "password123",
+        })
+        db = client.app["db"]
+        user = db.get_user_by_username("bob")
+        db.update_user_status(user["id"], "rejected")
+
+        resp = await client.post("/login", json={
+            "username": "bob",
+            "password": "password123",
+        })
+        assert resp.status == 403
+        body = await resp.json()
+        assert "rejected" in body["reason"].lower()
 
     async def test_register_duplicate_fails(self, client):
         await client.post("/register", json={"username": "bob", "password": "password123"})
@@ -58,6 +107,7 @@ class TestRegisterAndLogin:
 
     async def test_login_wrong_password(self, client):
         await client.post("/register", json={"username": "dave", "password": "password123"})
+        await _approve_user(client, "dave")
         resp = await client.post("/login", json={"username": "dave", "password": "wrong"})
         assert resp.status == 401
 
@@ -67,6 +117,7 @@ class TestRegisterAndLogin:
 
     async def test_me_endpoint_with_valid_token(self, client):
         await client.post("/register", json={"username": "eve", "password": "password123"})
+        await _approve_user(client, "eve")
         login_resp = await client.post("/login", json={"username": "eve", "password": "password123"})
         token = (await login_resp.json())["token"]
 
@@ -84,9 +135,8 @@ class TestRegisterAndLogin:
             "username": "' OR 1=1 --",
             "password": "password123",
         })
-        # Should succeed as a literal username (no injection)
         assert resp.status == 201
-        # Verify no data leak — only this one user
+        await _approve_user(client, "' OR 1=1 --")
         login_resp = await client.post("/login", json={
             "username": "' OR 1=1 --",
             "password": "password123",
@@ -98,11 +148,13 @@ class TestMeetingFlow:
 
     async def _make_teacher(self, client, username="teacher1"):
         await client.post("/register", json={"username": username, "password": "password123", "role": "teacher"})
+        await _approve_user(client, username)
         resp = await client.post("/login", json={"username": username, "password": "password123"})
         return (await resp.json())["token"]
 
     async def _make_student(self, client, username="student1"):
         await client.post("/register", json={"username": username, "password": "password123", "role": "student"})
+        await _approve_user(client, username)
         resp = await client.post("/login", json={"username": username, "password": "password123"})
         return (await resp.json())["token"]
 
